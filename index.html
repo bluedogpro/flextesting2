@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -484,52 +486,47 @@ body::after{
   };
 
   function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-
-function save(){   // CHANGED: now uses cookies
-  const payload = {
-    money: state.money,
-    eps: state.eps,
-    inventory: state.inventory.map(it=>({uid:it.uid,name:it.name,rarity:it.rarity,price:it.price,baseIdx:it.baseIdx})),
-    stands: state.stands,
-    shop: state.shop,
-    fastMode: state.fastMode,
-    placed: {}
-  };
-  for(const k in state.placed){
-    const it = state.placed[k];
-    if(it) payload.placed[k] = { uid: it.uid, name: it.name, rarity: it.rarity, price: it.price, baseIdx: it.baseIdx };
-  }
-  const json = JSON.stringify(payload);
-  document.cookie = "flexSave=" + encodeURIComponent(json) + "; path=/; max-age=31536000"; // 1 year
-}
-function load(){   // CHANGED: now uses cookies
-  const cookies = document.cookie.split("; ").reduce((acc, c) => {
-    const [k, v] = c.split("=");
-    acc[k] = v;
-    return acc;
-  }, {});
-  if (!cookies.flexSave) return;
-  try{
-    const dat = JSON.parse(decodeURIComponent(cookies.flexSave));
-    state.money = dat.money ?? state.money;
-    state.eps = dat.eps ?? state.eps;
-    state.inventory = (dat.inventory||[]).map(it=>({
-      ...it, uid:it.uid, svg: getItemSvg(it.name, it.baseIdx||0, it.rarity), baseIdx: it.baseIdx||0
-    }));
-    state.stands = dat.stands ?? state.stands;
-    state.shop = dat.shop ?? state.shop;
-    state.fastMode = dat.fastMode ?? state.fastMode;
-    state.placed = {};
-    if(dat.placed){
-      for(const k in dat.placed){
-        const it = dat.placed[k];
-        state.placed[k] = { ...it, uid:it.uid, svg: getItemSvg(it.name, it.baseIdx||0, it.rarity), baseIdx: it.baseIdx||0 };
-      }
+  function save() {
+    const payload = {
+      money: state.money,
+      eps: state.eps,
+      inventory: state.inventory.map(it=>({uid:it.uid,name:it.name,rarity:it.rarity,price:it.price,baseIdx:it.baseIdx})),
+      stands: state.stands,
+      shop: state.shop,
+      fastMode: state.fastMode,
+      placed: {}
+    };
+    for(const k in state.placed){
+      const it = state.placed[k];
+      if(it) payload.placed[k] = { uid: it.uid, name: it.name, rarity: it.rarity, price: it.price, baseIdx: it.baseIdx };
     }
-  }catch(e){
-    console.warn("load failed", e);
+    const json = JSON.stringify(payload);
+    localStorage.setItem("flexSave", json);
   }
-}
+  function load() {
+    const json = localStorage.getItem("flexSave");
+    if (!json) return;
+    try{
+      const dat = JSON.parse(json);
+      state.money = dat.money ?? state.money;
+      state.eps = dat.eps ?? state.eps;
+      state.inventory = (dat.inventory||[]).map(it=>({
+        ...it, uid:it.uid, svg: getItemSvg(it.name, it.baseIdx||0, it.rarity), baseIdx: it.baseIdx||0
+      }));
+      state.stands = dat.stands ?? state.stands;
+      state.shop = dat.shop ?? state.shop;
+      state.fastMode = dat.fastMode ?? state.fastMode;
+      state.placed = {};
+      if(dat.placed){
+        for(const k in dat.placed){
+          const it = dat.placed[k];
+          state.placed[k] = { ...it, uid:it.uid, svg: getItemSvg(it.name, it.baseIdx||0, it.rarity), baseIdx: it.baseIdx||0 };
+        }
+      }
+    }catch(e){
+      console.warn("load failed", e);
+    }
+  }
 
   function fmt(n){ return n.toLocaleString(undefined,{maximumFractionDigits:0}); }
   function updateTop(){ $('#cash').textContent = '$' + fmt(Math.max(0, Math.floor(state.money))); $('#eps').textContent = '+ $' + fmt(state.eps) + ' / sec'; }
@@ -818,6 +815,7 @@ function load(){   // CHANGED: now uses cookies
     $('#toolsBtn').title = 'Tools ('+msg+')';
     save();
   });
+
 
   function boot(){
     load();
